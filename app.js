@@ -1,5 +1,6 @@
 import fs from 'fs';
 import jszip from 'jszip';
+import path from 'path';
 import { inspect } from 'util';
 import { parseString } from 'xml2js';
 import zlib from 'node:zlib';
@@ -10,7 +11,41 @@ import MailReader from './MailReader.js';
 const PROCESSED_DATA_FOLDER = 'processedData/';
 const RAW_DATA_FOLDER = 'rawdata/';
 
-import config from './config.js';
+const usage = "Usage: "
+	+ process.argv[0]
+	+ " "
+	+ process.argv[1]
+	+ " [--config config.json/js]";
+
+var print_usage =
+	process.argv.length > 4 ||
+	process.argv.length == 3 ||
+	(process.argv.length == 4 &&
+		process.argv[2] != "--config");
+
+if(print_usage)
+{
+	console.error(usage);
+	process.exit(1);
+}
+
+const config_file = function()
+{
+	if(process.argv.length == 2)
+		return './config.js';
+	return path.resolve(process.argv[3]);
+}();
+
+const config = function()
+{
+	return import(config_file)
+		.catch((error) =>
+		{
+			console.error('Error when parsing configuration file at '
+				+ config_file + ': ' + error);
+			process.exit(1);
+		});
+}();
 
 async function doWork() {
 	const db = new Database(config.postgres);
